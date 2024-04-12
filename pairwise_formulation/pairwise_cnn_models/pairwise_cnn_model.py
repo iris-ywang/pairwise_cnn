@@ -1,20 +1,14 @@
 import numpy as np
-import pandas as pd
-from itertools import product
 import logging
-
-from pairwise_formulation.pa_basics.import_data import \
-    filter_data, kfold_splits, transform_categorical_columns
 
 import torch
 import torch.nn as nn
+
 from sklearn.metrics import accuracy_score
 from sklearn.utils import shuffle
 
 from pairwise_formulation.pairwise_data import PairwiseDataInfo, PairwiseValues
 from pairwise_formulation.pa_basics.rating import rating_trueskill, rating_sbbr
-from pairwise_formulation.evaluations.extrapolation_evaluation import ExtrapolationEvaluation
-from pairwise_formulation.evaluations.stock_return_evaluation import calculate_returns
 
 
 def pair_2d_pairwise_features(data: np.ndarray, pair_ids:list):
@@ -82,8 +76,8 @@ class pairwise_cnn_model():
         loss_fn = nn.MarginRankingLoss()
         optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
-        n_epochs = 10
-        batch_size = 200
+        n_epochs = 20
+        batch_size = 500
         for epoch in range(n_epochs):
             pairwise_train, pairwise_validation = self.generate_train_vld_sets()
             X_train, Y_train = pairwise_train
@@ -115,7 +109,7 @@ class pairwise_cnn_model():
                     torch.sign(Y).numpy(),
                     torch.sign(Y_pred.reshape(Y_pred.shape[0])).detach().numpy()
                 )
-            print(f"Epoch {epoch}: model signed accuracy is {rank_loss}")
+            print(f"Epoch {epoch}: model signed accuracy is {rank_loss / n_batches}")
         self.model = model
 
     def predict(
@@ -239,45 +233,31 @@ class pairwise_cnn_model():
 class cnn_model(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv1d(2, 2, kernel_size=32, stride=1, padding=1)
-        self.act1 = nn.ReLU()  # return positive response
+        self.conv = nn.Sequential(
+            nn.Conv1d(2, 4, kernel_size=4, stride=1, padding=2),
+            nn.ReLU(),  # return positive response
+            nn.BatchNorm1d(4),
+            nn.Conv1d(4, 8, kernel_size=4, stride=1, padding=2),
+            nn.ReLU(),
+            nn.BatchNorm1d(8),
+            nn.Conv1d(8, 16, kernel_size=6, stride=1, padding=2),
+            nn.ReLU(),
+            nn.BatchNorm1d(16),
+            nn.MaxPool1d(kernel_size=(2))
+        )
 
-        self.conv2 = nn.Conv1d(2, 2, kernel_size=16, stride=1, padding=1)
-        self.act2 = nn.ReLU()
-
-        self.conv3 = nn.Conv1d(2, 2, kernel_size=6, stride=1, padding=1)
-        self.act3 = nn.ReLU()
-        self.pool2 = nn.MaxPool1d(kernel_size=(2))
-
+        self.gc = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(8192, 4000),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(4000, 1)
+        )
         self.flat = nn.Flatten()
-
-        self.fc3 = nn.Linear(978, 169)
-        self.act3 = nn.ReLU()
-        self.drop3 = nn.Dropout(0.5)
-
-        self.fc4 = nn.Linear(169, 1)
 
     def forward(self, x):
         # input 2*1024, output 2*995
-        x = self.act1(self.conv1(x))
-
-        # input 2*995, output 2*982
-        x = self.act2(self.conv2(x))
-
-        # input 2*982, output 2*979
-        x = self.act3(self.conv3(x))
-
-        # input 2*979, output 2*489
-        x = self.pool2(x)
-
-        # input 2*489, output 978
-        x = self.flat(x)
-
-        # input 1014, output 169
-        x = self.act3(self.fc3(x))
-        x = self.drop3(x)
-        # input 512, output 10
-        # input 169, output 10
-        x = self.fc4(x)
-        return x
+        x_conv = self.conv(x)
+        out = self.gc(x_conv)
+        return out
 

@@ -17,8 +17,13 @@ if __name__ == '__main__':
     output_dir = "./output/qsar_boolean_large_datasets/"
     list_filename = [
         "data_CHEMBL203.csv",
+        "data_CHEMBL204.csv",
+        "data_CHEMBL228.csv",
     ]
-    sizes = [200]
+    sizes = [
+        200,
+        500,
+    ]
 
     ######################################################
 
@@ -27,7 +32,6 @@ if __name__ == '__main__':
         whole_dataset = pd.read_csv(input_dir + filename)
         whole_dataset = whole_dataset.drop(columns=["molecule_id"])
 
-        metrics_per_size = []
         for size in sizes:
             train_test = whole_dataset.sample(n=size, random_state=0)
             train_test_splits_dict = kfold_splits(train_test=np.array(train_test), fold=10)
@@ -43,6 +47,5 @@ if __name__ == '__main__':
                 metrics_per_fold.append(
                     [m_rank_sa] + m_rank_pa + [m_est_sa, m_est_pa]
                 )  # list [5, 6] + [2, 6] = [7, 6]
-            metrics_per_size.append(metrics_per_fold)
-        metrics_per_dataset.append(metrics_per_size)
-
+            metrics_per_dataset.append(metrics_per_fold)
+            np.save("./run2.npy", np.array(metrics_per_dataset))
