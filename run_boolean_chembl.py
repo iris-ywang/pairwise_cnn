@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import warnings
+import os
 
 from pairwise_formulation.pa_basics.import_data import \
     kfold_splits
@@ -13,8 +14,11 @@ warnings.filterwarnings("ignore")
 
 if __name__ == '__main__':
     #####run parameters #####
-    input_dir = "../data/qsar_boolean_large_datasets/"
-    output_dir = "./output/qsar_boolean_large_datasets/"
+    input_dir = "./data/qsar_boolean_large_datasets/"
+    output_dir = "./output/run_boolean_chembl/"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     list_filename = [
         "data_CHEMBL203.csv",
         "data_CHEMBL204.csv",
@@ -48,4 +52,4 @@ if __name__ == '__main__':
                     [m_rank_sa] + m_rank_pa + [m_est_sa, m_est_pa]
                 )  # list [5, 6] + [2, 6] = [7, 6]
             metrics_per_dataset.append(metrics_per_fold)
-            np.save("./run2.npy", np.array(metrics_per_dataset))
+            np.save(output_dir + "/run2.npy", np.array(metrics_per_dataset))
