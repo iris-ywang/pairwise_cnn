@@ -23,8 +23,8 @@ def filter_data(train_test, shuffle_state=None):
 
     filter1 = uniform_features(train_test)
     filter2 = duplicated_features(filter1)
-    filter3 = transform_ordinal_to_boolean(filter2)
-    filter3[:, 1:] = minmax_scale(filter3[:, 1:])
+    filter3 = rearrange_feature_orders_by_popularity(filter2)
+
     return filter3
 
 
@@ -131,3 +131,10 @@ def transform_ordinal_to_boolean(data: np.array):
     data_transformed = np.concatenate([data_transformed, X_transformed], axis=1)
     logging.info(f"Dataset is of size {n_samples}. After transformation, number of features changed from {n_columns-1} to {data_transformed.shape[1]-1}.")
     return data_transformed
+
+def rearrange_feature_orders_by_popularity(data: np.array):
+    first_column = data[:, 0:1]
+    ones_count = np.sum(data[:, 1:], axis=0)
+    sorted_indices = np.argsort(ones_count)[::-1]
+    sorted_arr = np.hstack((first_column, data[:, 1:][:, sorted_indices]))
+    return sorted_arr
