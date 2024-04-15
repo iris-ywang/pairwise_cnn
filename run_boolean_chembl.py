@@ -17,7 +17,7 @@ logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 if __name__ == '__main__':
     #####run parameters #####
-    run_msg = "Run 1024 inputs conv, with ordered inputs."
+    run_msg = "Run 1024 inputs conv, with ordered inputs."  # REMEMBER TO UPDATE RESULT FILE NAME
 
     logging.info(run_msg)
     input_dir = "./data/qsar_boolean_large_datasets/"
@@ -62,5 +62,5 @@ if __name__ == '__main__':
                     [m_rank_sa] + m_rank_pa + [m_est_sa, m_est_pa]
                 )  # list [5, 6] + [2, 6] = [7, 6]
             metrics_per_dataset.append(metrics_per_fold)
-            np.save(output_dir + "/run2.npy", np.array(metrics_per_dataset))
+            np.save(output_dir + "/run3.npy", np.array(metrics_per_dataset))
         logging.info(f"Finished {filename}, size {size}.")
