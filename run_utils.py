@@ -97,9 +97,12 @@ def run_standard_approach(
         test_data=pairwise_data.test_ary
     )
 
+    y_sa_pred_w_train = np.array(pairwise_data.y_true_all)
+    y_sa_pred_w_train[pairwise_data.test_ids] = y_sa_pred
+
     metrics_sa = ExtrapolationEvaluation(
         percentage_of_top_samples=percentage_of_top_samples,
-        y_train_with_predicted_test=y_sa_pred,
+        y_train_with_predicted_test=y_sa_pred_w_train,
         pairwise_data_info=pairwise_data,
     ).run_extrapolation_evaluation()  # list, 6
 
